@@ -65,9 +65,10 @@ for i in range(n_trials):
         # Kalman
         trial_kf.append(kf.update(val))
         
-        # BVIC (Simplified Logic)
-        energy = abs(val)
-        alpha = 0.02 if energy < 0.15 else 0.6
+        # BVIC FIXED LOGIC
+        # The CSV data is already x1000, so we scale the threshold (0.15 * 1000 = 150)
+        energy = abs(val) 
+        alpha = 0.02 if energy < 150.0 else 0.6 
         val_bvic = val_bvic + alpha * (val - val_bvic)
         trial_bvic.append(val_bvic)
     
