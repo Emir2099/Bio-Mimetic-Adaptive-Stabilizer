@@ -48,8 +48,6 @@ def process_continuous(df, window_frames=35):
     euro = OneEuroFilter(initial_val=raw_cal[0])
 
     out_ema, out_bvic, out_kf, out_euro = [], [], [], []
-    dynamic_counter = 0
-    in_dynamic_mode = False
 
     # 4. Run filters continuously over the whole file
     for val, t in zip(raw_cal, times):
@@ -59,21 +57,10 @@ def process_continuous(df, window_frames=35):
         out_euro.append(euro.filter(val, t))
         out_kf.append(kf.update(val))
         
-        # B-VIC: Hysteresis + Zero-Equilibrium Static Filter
-        error = abs(val - bvic_val)
-        if error > 150.0:
-            dynamic_counter += 1
-        else:
-            dynamic_counter = 0
-        if dynamic_counter >= 3:
-            in_dynamic_mode = True
-        elif error <= 150.0:
-            in_dynamic_mode = False
-
-        if in_dynamic_mode:
-            bvic_val = bvic_val + 0.60 * (val - bvic_val)
-        else:
-            bvic_val = 0.95 * bvic_val + 0.02 * val
+        # B-VIC Error-Driven Logic
+        error = abs(val - bvic_val) 
+        alpha = 0.02 if error < 150.0 else 0.60
+        bvic_val = bvic_val + alpha * (val - bvic_val)
         out_bvic.append(bvic_val)
 
     # 5. Save back to dataframe

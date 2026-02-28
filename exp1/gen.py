@@ -6,8 +6,8 @@ import csv
 import time
 from collections import deque
 
-# --- CONFIGURATION (UPDATE THIS IP!) ---
-PHONE_URL = "http://192.168.0.107:8080"  # <--- CHECK THIS IP
+# --- CONFIGURATION  ---
+PHONE_URL = "http://10.180.173.207:8080"  
 DATA_URL = f"{PHONE_URL}/get?gyrX&gyrY&gyrZ&GyroX&GyroY&GyroZ"
 
 # --- ACADEMIC PARAMETERS ---
