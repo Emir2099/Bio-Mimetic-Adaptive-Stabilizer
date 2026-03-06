@@ -120,8 +120,8 @@ class StabilizerSystem:
                 val = buffer["gyrX"]["buffer"][0]
             elif "GyroX" in buffer and buffer["GyroX"]["buffer"]:
                 val = buffer["GyroX"]["buffer"][0]
-            return val
-        except:
+            return val if val is not None else 0.0
+        except Exception:
             return 0.0
 
     def lerp(self, start, end, alpha):
@@ -130,6 +130,10 @@ class StabilizerSystem:
     def update(self):
         current_time = time.time()
         sensor_input = self.get_sensor_data()
+        
+        # Safety check: ensure sensor_input is never None
+        if sensor_input is None:
+            sensor_input = 0.0
         
         # SENSITIVITY MULTIPLIER (Scale up for visualization)
         target = sensor_input * 1000 
