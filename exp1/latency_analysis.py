@@ -175,7 +175,7 @@ def measure_latency(df, name="Subject"):
     }
 
 
-# ── 4. Optional: Plot the Flick Window ────────────────────────────────────────
+# ── 4. Plot the Flick Window ────────────────────────────────────────
 
 def plot_flick(dyn, latency_info, name="Subject"):
     fig, ax = plt.subplots(figsize=(10, 5))
@@ -207,9 +207,8 @@ def plot_flick(dyn, latency_info, name="Subject"):
 
 if __name__ == "__main__":
 
-    # ── Load your CSV files here ──
+    # ── Load CSV files here ──
     # Expected columns: Timestamp_s, Raw_Input
-    # (add more subjects by extending the list below)
     subjects = [
         ("subject1_data.csv", "Subject 1"),
         ("subject2_data.csv", "Subject 2"),

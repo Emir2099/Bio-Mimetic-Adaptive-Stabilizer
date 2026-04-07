@@ -1,169 +1,165 @@
 # Bio-Mimetic Adaptive Stabilizer (B-VIC)
 
-A novel bio-mimetic variable impedance control system for real-time motion stabilization, inspired by how the human nervous system dynamically adjusts muscle stiffness based on movement context.
+Bio-Mimetic Variable Impedance Control (B-VIC) for real-time stabilization of gyroscope motion signals, with a full experimental pipeline across 10 subjects.
 
-## 🎯 Overview
+## Overview
 
-This project implements **B-VIC (Bio-Mimetic Variable Impedance Control)**, an adaptive signal filtering algorithm that mimics biological motor control mechanisms. Unlike traditional fixed-parameter filters, B-VIC dynamically adjusts its smoothing behavior based on detected motion energy:
+This repository contains:
 
-- **Low Energy (Stable/Idle)**: High stiffness for maximum tremor suppression
-- **High Energy (Action/Movement)**: Low stiffness for responsive tracking
+- Real-time B-VIC demos connected to phone gyro streams
+- A data logger for collecting trial CSV files
+- Multi-subject evaluation scripts comparing B-VIC against EMA, 1-Euro, and Kalman filters
+- Figure generation scripts for static jitter suppression and dynamic response analysis
 
-This creates a system that is simultaneously **stable during rest** and **responsive during intentional movement**.
+The latest implementation is based on continuous processing with:
 
-## ✨ Key Features
+- Bias calibration from low-variance windows
+- Hysteresis-based mode switching for B-VIC
+- Zero-equilibrium static behavior to reduce drift
 
-- **Adaptive Filtering**: Real-time stiffness adjustment based on motion energy detection
-- **Real-time Visualization**: Pygame-based display comparing raw input vs. filtered output
-- **Phone Sensor Integration**: Connects to smartphone gyroscope via HTTP (using sensor streaming apps)
-- **Academic Benchmarking**: Comparison against 1-Euro Filter and standard EMA
-- **Data Logging**: CSV export for experimental analysis and paper figures
-
-## 📁 Project Structure
+## Repository Layout
 
 ```
 Bio-Mimetic Adaptive Stabilizer/
-│
-├── updated.py          # Main application with real-time visualization
-├── vr_demo.py          # Simplified demo showing core concept
-├── vr_input.py         # Utility script for testing phone connectivity
-│
-└── exp1/               # Experiment & Analysis Tools
-    ├── gen.py          # Data logger comparing B-VIC vs 1-Euro Filter
-    ├── kalman.py       # Monte Carlo simulation with Kalman filter comparison
-    ├── graph.py        # Publication-ready graph generator
-    └── experiment_data.csv  # Sample experimental data
+└── exp1/
+        ├── gen.py
+        ├── graph.py
+        ├── kalman.py
+        ├── latency_analysis.py
+        ├── rmse_comparison.py
+        ├── subject_1_data.csv
+        ├── subject_2_data.csv
+        ├── subject_3_data.csv
+        ├── subject_4_data.csv
+        ├── subject_5_data.csv
+        ├── subject_6_data.csv
+        ├── subject_7_data.csv
+        ├── subject_8_data.csv
+        ├── subject_9_data.csv
+        └── subject_10_data.csv
 ```
 
-## 🚀 Getting Started
+## What Each Script Does
 
-### Prerequisites
+- `exp1/gen.py`: Data logger (press `R` to start/stop recording) writing experiment CSV format.
+- `exp1/kalman.py`: Multi-subject RMSE and paired t-test analysis (N=10).
+- `exp1/graph.py`: Multi-subject figure generation (all-subject and summary plots).
+
+## Requirements
+
+Install dependencies:
 
 ```bash
 pip install pygame requests numpy pandas matplotlib scipy
 ```
 
-### Phone Sensor Setup
+## Phone Streaming Setup (for `updated.py` / `gen.py`)
 
-1. Install a sensor streaming app on your smartphone (e.g., "Sensor Server", "Phyphox", or similar)
-2. Start the HTTP server on your phone
-3. Update the `PHONE_URL` in the Python files to match your phone's IP address:
-   ```python
-   PHONE_URL = "http://YOUR_PHONE_IP:8080"
-   ```
-4. Ensure your phone and computer are on the same network
+1. Start your phone sensor HTTP stream app.
+2. Ensure phone and PC are on the same network.
+3. Update `PHONE_URL` in scripts that fetch live data.
 
-### Running the Application
+Example:
 
-**Main Visualization:**
+```python
+PHONE_URL = "http://YOUR_PHONE_IP:8080"
+```
+
+## Running Real-Time Demos
+
+From repository root:
+
 ```bash
 python updated.py
 ```
 
-**Simple Demo:**
+## Data Collection Workflow
+
+From `exp1`:
+
 ```bash
-python vr_demo.py
+python gen.py
 ```
 
-**Test Phone Connection:**
-```bash
-python vr_input.py
-```
+Inside the Pygame window:
 
-## 📊 Running Experiments
+- Press `R` to start recording
+- Press `R` again to stop recording
 
-### Recording Data
+Recorded CSV columns:
 
-1. Run the data logger:
-   ```bash
-   cd exp1
-   python gen.py
-   ```
-2. Press **R** to start/stop recording
-3. Data is saved to `experiment_data.csv`
+- `Timestamp_s`
+- `Raw_Input`
+- `Standard_EMA`
+- `OneEuro`
+- `BVIC_Output`
+- `Stiffness_Alpha`
+- `Mode_State`
 
-### Generating Graphs
+## Multi-Subject Analysis (Current Implementation)
 
-```bash
-cd exp1
-python graph.py
-```
+### 1) Statistical Evaluation
 
-This generates publication-ready figures:
-- `static_stability_clean.png` - Tremor suppression comparison
-- `dynamic_response_clean.png` - Latency analysis
-
-### Statistical Analysis
+From `exp1`:
 
 ```bash
-cd exp1
 python kalman.py
 ```
 
-Runs Monte Carlo simulations comparing B-VIC against:
-- Standard EMA (Exponential Moving Average)
-- 1-Euro Filter
-- Kalman Filter
+Current `kalman.py` behavior:
 
-## ⚙️ Algorithm Parameters
+- Loads all 10 files: `subject_1_data.csv` ... `subject_10_data.csv`
+- Performs per-subject calibration and continuous filtering
+- Computes static-window RMSE statistics for:
+    - Raw input
+    - Standard EMA
+    - 1-Euro
+    - Kalman
+    - B-VIC
+- Prints:
+    - Mean RMSE ± Std Dev across subjects
+    - Per-subject breakdown table
+    - Paired t-tests (`B-VIC vs Kalman`, `B-VIC vs 1-Euro`)
+    - Empirical SNR improvement
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `STABLE_ALPHA` | 0.02 | Smoothing factor during stable/idle state |
-| `ACTION_ALPHA` | 0.60 | Smoothing factor during action/movement |
-| `ENERGY_THRESHOLD` | 0.15 | Motion energy threshold for state switching |
-| `STANDARD_ALPHA` | 0.05 | Fixed alpha for comparison EMA filter |
+### 2) Figure Generation
 
-## 🧬 The Bio-Mimetic Concept
+From `exp1`:
 
-The algorithm is inspired by the human neuromuscular system:
-
-1. **Proprioceptive Sensing**: Detect current motion "energy" (magnitude)
-2. **Impedance Modulation**: Adjust virtual "stiffness" based on context
-3. **Smooth Transitions**: Gradual stiffness changes prevent discontinuities
-
-```python
-# Core Algorithm Logic
-energy = abs(sensor_input)
-
-if energy < ENERGY_THRESHOLD:
-    target_alpha = STABLE_ALPHA    # High stiffness (tremor suppression)
-    mode = "STABILIZING"
-else:
-    target_alpha = ACTION_ALPHA    # Low stiffness (responsive tracking)
-    mode = "ACTION"
-
-# Smooth stiffness transition
-current_stiffness = lerp(current_stiffness, target_alpha, 0.1)
-
-# Apply adaptive filter
-output = lerp(previous_output, target, current_stiffness)
+```bash
+python graph.py
 ```
 
-## 📈 Results
+Current `graph.py` outputs:
 
-B-VIC demonstrates:
-- **Superior static stability**: Lower RMSE during idle/tremor conditions
-- **Better dynamic response**: Reduced latency compared to heavily smoothed filters
-- **Adaptive behavior**: Automatic mode switching without manual tuning
+- `empirical_validation_all_subjects.png`
+    - Full grid: static and dynamic windows for all subjects
+- `empirical_validation_summary.png`
+    - Compact summary for representative subjects
+- `static_comparison_grid.png`
+    - Static-only comparison across all subjects
 
-## 📄 Citation
+## Core B-VIC Logic (Summary)
 
-If you use this work in your research, please cite:
+B-VIC switches between static and dynamic behavior based on motion error and hysteresis:
 
-```bibtex
-@article{bvic2026,
-  title={Bio-Mimetic Variable Impedance Control for Real-Time Motion Stabilization},
-  author={[Your Name]},
-  journal={IEEE Access},
-  year={2026}
-}
-```
+- Dynamic mode entry requires consecutive threshold crossings
+- Static mode uses decay + low alpha to pull toward zero while tracking fine tremor
 
-## 📝 License
+Typical parameters used in analysis scripts:
 
-This project is for academic and research purposes.
+- `THRESHOLD = 150.0`
+- `CONFIRM_FRAMES = 3`
+- `ALPHA_DYNAMIC = 0.60`
+- `DECAY_STATIC = 0.95`
+- `ALPHA_STATIC = 0.02`
 
-## 🤝 Contributing
+## Notes
 
-Contributions are welcome! Please feel free to submit issues or pull requests.
+- Run analysis scripts from the `exp1` directory so relative file paths resolve correctly.
+- If a subject file is missing, scripts will print a warning and skip it.
+- For reproducible publication figures, keep subject CSV schema unchanged.
+
+## License
+
+This repository is currently intended for academic and research use.
