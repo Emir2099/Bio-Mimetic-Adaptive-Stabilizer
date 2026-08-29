@@ -51,12 +51,12 @@ def process_continuous_for_graph(df, window_frames=35):
 
     out_ema, out_bvic, out_euro = [], [], []
 
-    # B-VIC with hysteresis + zero-equilibrium static mode.
+    # B-VIC recurrence from the paper.
     THRESHOLD = 150.0
     CONFIRM_FRAMES = 3
-    DECAY_STATIC = 0.95
-    ALPHA_STATIC = 0.02
-    ALPHA_DYNAMIC = 0.60
+    GAMMA = 0.95
+    ALPHA_MIN = 0.02
+    ALPHA_MAX = 0.60
 
     dynamic_counter = 0
     in_dynamic_mode = False
@@ -67,20 +67,20 @@ def process_continuous_for_graph(df, window_frames=35):
         out_euro.append(euro.filter(val, t))
 
         error = abs(val - bvic_val)
-        if error > THRESHOLD:
+        if error >= THRESHOLD:
             dynamic_counter += 1
         else:
             dynamic_counter = 0
 
         if dynamic_counter >= CONFIRM_FRAMES:
             in_dynamic_mode = True
-        elif error <= THRESHOLD:
+        else:
             in_dynamic_mode = False
 
         if in_dynamic_mode:
-            bvic_val = bvic_val + ALPHA_DYNAMIC * (val - bvic_val)
+            bvic_val = bvic_val + ALPHA_MAX * (val - bvic_val)
         else:
-            bvic_val = DECAY_STATIC * bvic_val + ALPHA_STATIC * val
+            bvic_val = GAMMA * bvic_val + ALPHA_MIN * val
         out_bvic.append(bvic_val)
 
     df['Calibrated_Raw'] = raw_cal

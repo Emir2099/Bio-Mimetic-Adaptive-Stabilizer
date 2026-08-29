@@ -76,13 +76,13 @@ def process_continuous(df, window_frames=35):
         
         # B-VIC: Hysteresis + Zero-Equilibrium Static Filter
         error = abs(val - bvic_val)
-        if error > 150.0:
+        if error >= 150.0:
             dynamic_counter += 1
         else:
             dynamic_counter = 0
         if dynamic_counter >= 3:
             in_dynamic_mode = True
-        elif error <= 150.0:
+        else:
             in_dynamic_mode = False
 
         if in_dynamic_mode:

@@ -58,12 +58,12 @@ def process(df, window_frames=35):
 
     out_ema, out_bvic, out_euro = [], [], []
 
-    # ── B-VIC hysteresis parameters ──
-    THRESHOLD     = 150.0   # deg/s  — ~9× the noise floor (~16 deg/s)
-    CONFIRM_FRAMES = 3      # frames above threshold needed to enter Action mode
-    ALPHA_DYN     = 0.60   # Action mode gain     (low impedance)
-    ALPHA_STA     = 0.02   # Stabilisation gain   (high impedance)
-    GAMMA         = 0.95   # Zero-equilibrium decay for static mode
+    # ── B-VIC parameters from the paper ──
+    THRESHOLD      = 150.0
+    CONFIRM_FRAMES = 3
+    ALPHA_MAX      = 0.60
+    ALPHA_MIN      = 0.02
+    GAMMA          = 0.95
 
     dynamic_counter  = 0
     in_dynamic_mode  = False
@@ -78,29 +78,24 @@ def process(df, window_frames=35):
         out_euro.append(euro.filter(val, t))
 
         # B-VIC ──────────────────────────────────────────────────────────────
-        error = abs(val - bvic_val)          # kinetic energy proxy
+        error = abs(val - bvic_val)
 
         # Hysteresis counter: must see CONFIRM_FRAMES consecutive high-energy
         # frames before entering Action mode.  A single spike won't flip it.
-        if error > THRESHOLD:
+        if error >= THRESHOLD:
             dynamic_counter += 1
         else:
             dynamic_counter = 0
 
         if dynamic_counter >= CONFIRM_FRAMES:
             in_dynamic_mode = True
-        elif error <= THRESHOLD:
+        else:
             in_dynamic_mode = False
-        # (else: hold current mode during the ramp-up window)
 
         if in_dynamic_mode:
-            # Action mode: high passthrough, near-zero latency
-            bvic_val = bvic_val + ALPHA_DYN * (val - bvic_val)
+            bvic_val = bvic_val + ALPHA_MAX * (val - bvic_val)
         else:
-            # Stabilisation mode: zero-equilibrium update
-            # Equilibrium is 0 (true angular velocity during a static hold),
-            # NOT the noisy instantaneous sensor reading.
-            bvic_val = GAMMA * bvic_val + ALPHA_STA * val
+            bvic_val = GAMMA * bvic_val + ALPHA_MIN * val
 
         out_bvic.append(bvic_val)
         # ─────────────────────────────────────────────────────────────────────

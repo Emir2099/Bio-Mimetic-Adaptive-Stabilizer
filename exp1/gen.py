@@ -15,6 +15,7 @@ STANDARD_ALPHA = 0.05
 STABLE_ALPHA = 0.02
 ACTION_ALPHA = 0.60
 ENERGY_THRESHOLD = 0.15
+CONFIRM_FRAMES = 3
 
 # --- 1 EURO FILTER CONFIG (The Competitor) ---
 ONE_EURO_MIN_CUTOFF = 1.0
@@ -83,8 +84,9 @@ class StabilizerSystem:
         self.bio_val = 0.0
         self.euro_val = 0.0
         
-        self.current_stiffness = 0.1
+        self.current_stiffness = STABLE_ALPHA
         self.mode = "IDLE"
+        self.dynamic_counter = 0
         
         # Initialize Competitor
         self.one_euro = OneEuroFilter(ONE_EURO_MIN_CUTOFF, ONE_EURO_BETA, ONE_EURO_DCUTOFF)
@@ -146,20 +148,27 @@ class StabilizerSystem:
         self.euro_val = self.one_euro.filter(target, current_time)
 
         # 3. Bio-Mimetic Filter (Yours)
-        energy = abs(sensor_input)
+        energy = abs(target - self.bio_val)
         state_code = 0 # 0=Stable, 1=Action
         
-        if energy < ENERGY_THRESHOLD:
-            target_alpha = STABLE_ALPHA
-            self.mode = "STABILIZING"
-            state_code = 0
+        if energy >= ENERGY_THRESHOLD:
+            self.dynamic_counter += 1
         else:
+            self.dynamic_counter = 0
+
+        if self.dynamic_counter >= CONFIRM_FRAMES:
             target_alpha = ACTION_ALPHA
             self.mode = "ACTION"
             state_code = 1
+        else:
+            target_alpha = STABLE_ALPHA
+            self.mode = "STABILIZING"
 
-        self.current_stiffness = self.lerp(self.current_stiffness, target_alpha, 0.1)
-        self.bio_val = self.lerp(self.bio_val, target, self.current_stiffness)
+        self.current_stiffness = target_alpha
+        if state_code == 1:
+            self.bio_val = self.bio_val + ACTION_ALPHA * (target - self.bio_val)
+        else:
+            self.bio_val = 0.95 * self.bio_val + STABLE_ALPHA * target
 
         # Update History for Graph
         raw_history.append(self.raw_val)
